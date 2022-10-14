@@ -260,7 +260,10 @@ for candgen_version in ['v4', 'v3']: # version = {v3, v4, ...}
                 outdir_heurPattern = f'{args.outdir}/heuristics/direct'
 
                 filename = 'lf_' + str('lf_s_heurpattern_labels') + '.tsv'
-                label_heur_and_write( outdir_heurPattern, picos='S', df_data=df_data, write=args.write_cand, arg_options=args, lf_name=str(filename).replace('.tsv', ''))
+                if if_negs == True:
+                    label_heur_and_write( outdir_heurPattern, picos='S', df_data=df_data, write=args.write_cand, arg_options=args, lf_name=str(filename).replace('.tsv', ''), tune_for='sensitivity', neg_labs=negative_s_regex)
+                else:
+                    label_heur_and_write( outdir_heurPattern, picos='S', df_data=df_data, write=args.write_cand, arg_options=args, lf_name=str(filename).replace('.tsv', ''))
 
                 filename = 'lf_' + str('lf_s_heurpattern_labels') + '.tsv'
                 if if_negs == True:
