@@ -109,17 +109,7 @@ for candgen_version in ['v4', 'v3']: # version = {v3, v4, ...}
             ############################################################################################################## 
             print('Retrieving UMLS ontology arm (Preprocessing applied)')
             umls_db = f'{args.indir}/{args.umls_fpath}'
-            umls_p  = loadUMLSdb(umls_db, entity='P')
-            umls_p_lst = [v_i[0] for k,v in umls_p.items() for v_i in v  if '-' not in v_i[-1] ]   
-
-            umls_i = loadUMLSdb(umls_db, entity='I')
-            umls_i_lst = [v_i[0] for k,v in umls_i.items() for v_i in v  if '-' not in v_i[-1] ]
-
-            umls_o = loadUMLSdb(umls_db, entity='O')
-            umls_o_lst = [v_i[0] for k,v in umls_o.items() for v_i in v  if '-' not in v_i[-1] ]
-
             umls_s = loadUMLSdb(umls_db, entity='S')
-            umls_s_lst = [v_i[0] for k,v in umls_s.items() for v_i in v  if '-' not in v_i[-1] ]
 
             print('Retrieving non-UMLS Ontologies  (Preprocessing applied)')
             p_DO, p_DO_syn = loadOnt( f'{args.indir}/Ontologies/participant/DOID.csv', delim = ',', term_index = 1, term_syn_index = 2  )
@@ -172,7 +162,6 @@ for candgen_version in ['v4', 'v3']: # version = {v3, v4, ...}
             p_meanage = loadPattern( 'meanage' )
 
             i_control = loadPattern( 'control_i' )
-
             o_adverse = loadPattern( 'adverse_o' )
 
             s_study_type = loadPattern( 'studytype' )
