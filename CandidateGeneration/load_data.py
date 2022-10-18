@@ -5,7 +5,6 @@ import argparse
 
 from CandGenUtilities.experiment_arguments import *
 from CandGenUtilities.labeler_utilities import *
-from CandGenUtilities.source_target_mapping import *
 from LabelingFunctions.LFutils import get_text
 from LabelingFunctions.ontologyLF import *
 from Ontologies.ontologyLoader import *
