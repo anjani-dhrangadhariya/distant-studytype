@@ -40,7 +40,6 @@ from snorkel.labeling.model import LabelModel
 
 from CandGenUtilities.experiment_arguments import *
 from CandGenUtilities.labeler_utilities import *
-from CandGenUtilities.source_target_mapping import *
 from LabelingFunctions.externalmodelLF import ExternalModelLabelingFunction
 from LabelingFunctions.heuristicLF import (heurPattern_p_sampsize,
                                            heurPattern_pa, posPattern_i)
@@ -105,6 +104,12 @@ for candgen_version in ['v4', 'v3']: # version = {v3, v4, ...}
         try:
 
             ##############################################################################################################
+            # Load the dataset to be weakly-labelled
+            ##############################################################################################################
+            ebm_nlp = '/mnt/nas2/data/systematicReview/PICO_datasets/EBM_parsed'
+            df_data, df_data_flatten = loadEBMPICO( ebm_nlp, args.outdir, candgen_version=candgen_version, write_to_file = False )
+
+            ##############################################################################################################
             # Load labelling sources
             ############################################################################################################## 
             print('Retrieving UMLS ontology arm (Preprocessing applied)')
@@ -133,7 +138,7 @@ for candgen_version in ['v4', 'v3']: # version = {v3, v4, ...}
             s_ocre, _ = loadOnt( f'{args.indir}/Ontologies/study_type/OCRE.csv', delim=',', term_index=1, term_syn_index=2 )
             s_ctont, _ = loadOnt( f'{args.indir}/Ontologies/study_type/CTONT.csv', delim=',', term_index=1, term_syn_index=2 )
 
-
+            ######################################  Distant Supervision dictionaries loaded ###############################
             print('Retrieving distant supervision dictionaries')
             ds_participant = loadDS(args.ds_fpath, 'participant')
             ds_intervention = loadDS(args.ds_fpath, 'intervention')
@@ -149,21 +154,6 @@ for candgen_version in ['v4', 'v3']: # version = {v3, v4, ...}
 
             ###################################### ReGeX Labeling Function ######################################
             print('Retrieving ReGeX patterns')
-            p_sampsize = loadPattern( 'samplesize' ) # Generic pattern 
-            p_sampsize2 = loadPattern( 'samplesize2' ) # Sample size in ReGeX expression (n=XXXX)
-            p_sampsize3 = loadPattern( 'samplesize3' )  # Digits expressed as words 0_999
-            p_sampsize4 = loadPattern( 'samplesize4' )  # Digits expressed as words one_to_999
-            p_sampsize5 = loadPattern( 'samplesize5' )  # Digits expressed as words one_to_999_999
-
-            p_age = loadPattern( 'age0' )
-            p_agerange = loadPattern( 'age1' )
-            p_agemax = loadPattern( 'age2' )
-            p_agemaxmin = loadPattern( 'age3' )
-            p_meanage = loadPattern( 'meanage' )
-
-            i_control = loadPattern( 'control_i' )
-            o_adverse = loadPattern( 'adverse_o' )
-
             s_study_type = loadPattern( 'studytype' )
             s_study_type_basic = loadPattern( 'studytype_basic' )
             s_study_type_basicplus = loadPattern( 'studytype_basic+' )
@@ -173,6 +163,7 @@ for candgen_version in ['v4', 'v3']: # version = {v3, v4, ...}
             s_blinding = loadPattern( 'studytype_binded' )
             s_phase = loadPattern( 'study_phase' )
 
+            ###################################### Prepare the labelling templates for negative labels ######################################
             # Negative non-UMLS labels
             negative_s_nonUMLS = itertools.chain( p_DO, p_DO_syn, p_ctd, p_ctd_syn, p_HPO, p_HPO_syn, o_oae, o_oae_syn, o_so, o_so_syn, i_ctd, i_ctd_syn, i_chebi, i_chebi_syn)
             negative_s_nonUMLS = list(set(negative_s_nonUMLS))
@@ -183,11 +174,6 @@ for candgen_version in ['v4', 'v3']: # version = {v3, v4, ...}
             negative_s_regex = list(set(negative_s_regex))
             negative_s_regex = [ i for i in negative_s_regex if i.lower() not in list(map(str.lower, i_comparator))] # controls, placebo, sham, saline, etc...
 
-            ##############################################################################################################
-            # Load training, validation and test datasets
-            ##############################################################################################################
-            ebm_nlp = '/mnt/nas2/data/systematicReview/PICO_datasets/EBM_parsed'
-            df_data, df_data_flatten = loadEBMPICO( ebm_nlp, args.outdir, candgen_version=candgen_version, write_to_file = True )
 
             #########################################################################################
             # Level 1 - UMLS LF's
@@ -221,14 +207,13 @@ for candgen_version in ['v4', 'v3']: # version = {v3, v4, ...}
                 ###################################### Fetch negative labelling function ######################################
                 neg_i_dict = itertools.chain( p_genders, o_endpoints )
                 neg_i_dict = list(set(neg_i_dict))
-                neg_i_dict_filtered = [ i for i in neg_i_dict if i.lower() not in list(map(str.lower, i_comparator))]
 
                 neg_s_dict = itertools.chain( p_genders, o_endpoints )
                 neg_s_dict = list(set(neg_s_dict))
                 neg_s_dict_filtered = [ i for i in neg_i_dict if i.lower() not in list(map(str.lower, i_comparator))]
                 neg_s_dict_filtered = [ i for i in neg_s_dict_filtered if i.lower() not in list(map(str.lower, s_dictionary))]
 
-                # Dictionary Labeling Function
+                ######################################  Dictionary Labeling Function ######################################
                 for m in ['fuzzy', 'direct']:
                     for ontology, entity, ont_name, neg_labs  in zip([s_dictionary, i_comparator], ['S', 'S'], ['dict_s_type', 'dict_s_comp_type'], [ neg_s_dict_filtered, neg_s_dict_filtered ] ) : 
                         outdir_dict = f'{args.outdir}/dictionary/{m}'
@@ -245,7 +230,6 @@ for candgen_version in ['v4', 'v3']: # version = {v3, v4, ...}
                         label_regex_and_write( outdir_reg, [reg_lf_i], picos=entity, df_data=df_data, write=args.write_cand, arg_options=args, lf_name=reg_lf_name )
 
                 ######################################  Heutistic Labeling Functions ###################################### 
-                # TODO: Negative labelling function
                 outdir_heurPattern = f'{args.outdir}/heuristics/direct'
 
                 filename = 'lf_' + str('lf_s_heurpattern_labels') + '.tsv'
